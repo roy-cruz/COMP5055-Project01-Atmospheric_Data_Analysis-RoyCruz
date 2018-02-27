@@ -94,7 +94,6 @@ void print_report(struct climate_info *states[], int num_states);
 
 int main(int argc, char *argv[]) 
 {
-
     /* TODO: fix this conditional. You should be able to read multiple files. */
     if (argc < 2) 
     {
@@ -121,6 +120,7 @@ int main(int argc, char *argv[])
         }
 
         /* TODO: Analyze the file */
+        printf("%s\n", "****1");
          analyze_file(file, states, NUM_STATES); 
     }
 
@@ -194,7 +194,6 @@ void add_Info(struct climate_info *states[], struct climate_info *state, int ind
     states[index]->pressure += state->pressure;
     states[index]->surface_temperature += state->surface_temperature;
 
-
     //LIGHTNING STRIKES
     states[index]->lightning_strikes += state->lightning_strikes;
 
@@ -222,7 +221,6 @@ void add_Info(struct climate_info *states[], struct climate_info *state, int ind
     //AVERAGE CLOUD COVER
     states[index]->av_cloudCover = ((states[index]->cloud_cover)/states[index]->num_records);
 
-
 }
 
 /* TODO function documentation */
@@ -230,26 +228,35 @@ void add_Info(struct climate_info *states[], struct climate_info *state, int ind
 //if its an old state, you update the information
 void analyze_file(FILE *file, struct climate_info **states, int num_states) 
 {
+    printf("%s\n", "****2");
     const int line_sz = 100;
     char line[line_sz];
     char *token;
     int index = 0;
+    int val = 0;
+
 
     while (fgets(line, line_sz, file) != NULL)
     {
-        
+        printf("%s\n", "****3");
         struct climate_info *state = get_state(line);
 
         if (state == NULL)
             continue;
-
+        printf("%s\n", "****4");
         char *code = state->code;
 
         for(int i = 0; i < num_states;i++)
         {
             //compare code(state exists)
-            if (strcmp(states[i]->code, code) == 0)
+            printf("%s\n", "****");
+            printf("%s\n", states[i]->code);
+            printf("%s\n", code);
+            int val = strcmp(states[i]->code, code);
+            printf("%d\n", val);
+            if (val == 0)
             {
+                printf("%s\n", "****5");
                 add_Info(states, state, i);
                
             }
@@ -258,6 +265,7 @@ void analyze_file(FILE *file, struct climate_info **states, int num_states)
             //only use it when you have to
             //there is something wrong here
             {
+                printf("%s\n", "****6");
                 add_State(states, state,i);
                 ++index;
             }
