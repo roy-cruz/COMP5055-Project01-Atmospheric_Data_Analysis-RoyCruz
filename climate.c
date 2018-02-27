@@ -112,8 +112,8 @@ int main(int argc, char *argv[])
         /* TODO: If the file doesn't exist, print an error message and move on
          * to the next file. */
 
-        FILE *file = fopen(argv[1], "r");
-        if(!(file = fopen(argv[1], "r")))
+        FILE *file = fopen(argv[i], "r");
+        if(file == NULL)
         {
             perror("fopen"); //perror prints the actual error 
             return EXIT_FAILURE; //we don't return 0 if it failed
@@ -132,7 +132,9 @@ int main(int argc, char *argv[])
 //create a new method that reads the dates (in our case its the state code) of each line
 //and stores it inside the struct
 
-//Function: method to read the state code of each line, and store it inside a struct
+/*The function of this method is to read each line in the file and add that information into a sturct 
+this will make it easy in terms of the variables being used in the sense of the  values not being used in more that one place 
+this makes the projected ouput for the file a part that can easily be  */
 
 struct climate_info *get_state(char* line)
 { 
@@ -169,6 +171,7 @@ struct climate_info *create_state(char* tokens[], int tokenIndex)
 
 void add_State(struct climate_info *states[], struct climate_info *state, int index)
 {
+        states[index]->num_records = 1;
         if (states[index] == NULL) //if the 'code' attribute of the first element in the array is null
         //then in this loop we set the attributes in the states array to that of the values stored in the state array
         {
@@ -187,10 +190,10 @@ void add_State(struct climate_info *states[], struct climate_info *state, int in
 
 void add_Info(struct climate_info *states[], struct climate_info *state, int index)
 {
-    //to go from kelvin to celsius we have to - 273.15
+    states[index]->num_records++;
+    //to go from kelvin to celsius we have to *9/5 and - 273.15
     states[index]->humidity += state->humidity;
-    states[index]->snow += state->snow;
-    states[index]->cloud_cover += state->cloud_cover;
+    states[index]->cloud_cover += state->cloud_cover; 
     states[index]->pressure += state->pressure;
     states[index]->surface_temperature += state->surface_temperature;
 
@@ -246,31 +249,32 @@ void analyze_file(FILE *file, struct climate_info **states, int num_states)
         printf("%s\n", "****4");
         char *code = state->code;
 
-        for(int i = 0; i < num_states;i++)
-        {
-            //compare code(state exists)
-            printf("%s\n", "****");
-            printf("%s\n", states[i]->code);
-            printf("%s\n", code);
-            int val = strcmp(states[i]->code, code);
-            printf("%d\n", val);
-            if (val == 0)
-            {
-                printf("%s\n", "****5");
-                add_Info(states, state, i);
-               
-            }
+    for(int i = 0; i < num_states;i++)                  
 
-            else
-            //only use it when you have to
-            //there is something wrong here
-            {
-                printf("%s\n", "****6");
-                add_State(states, state,i);
-                ++index;
-            }
-        
-        }
+    {                                                   
+
+        if (states[i] == NULL) 
+
+        {                                         
+            add_State(states, state,i);                 
+            break;                                      
+        } 
+
+        else 
+        {                                        
+
+            int val = strcmp(states[i]->code, code);    
+
+            if (val == 0)                               
+            {                                           
+                add_Info(states, state, i);             
+                break;                                  
+
+            }                                           
+
+        }                                               
+
+    }         
         
     }
 
