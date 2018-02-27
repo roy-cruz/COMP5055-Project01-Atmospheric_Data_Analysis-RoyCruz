@@ -68,77 +68,235 @@
 
 #define NUM_STATES 50
 
+
 /* TODO: Add elements to the climate_info struct as necessary. */
-struct climate_info {
-    char code[3];
+//what is a struct
+struct climate_info 
+{
+    char code[3]; 
     unsigned long num_records;
-    long double sum_temperature;
+    long double humidity;
+    int snow;
+    long double cloud_cover;
+    long double pressure;
+    long double surface_temperature; 
+    long double av_temp;
+    long av_humidity;
+    long double max_temp;
+    long double min_temp;
+    int lightning_strikes;
+    long double av_cloudCover;
 };
 
+struct climate_info *create_state(char* tokens[], int tokenIndex);
 void analyze_file(FILE *file, struct climate_info *states[], int num_states);
 void print_report(struct climate_info *states[], int num_states);
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) 
+{
 
     /* TODO: fix this conditional. You should be able to read multiple files. */
-    if (argc != 2) {
+    if (argc < 2) 
+    {
         printf("Usage: %s tdv_file1 tdv_file2 ... tdv_fileN \n", argv[0]);
         return EXIT_FAILURE;
     }
 
     /* Let's create an array to store our state data in. As we know, there are
      * 50 US states. */
-    struct climate_info *states[NUM_STATES] = { NULL };
+    struct climate_info *states[NUM_STATES] = {NULL};
 
     int i;
-    for (i = 1; i < argc; ++i) {
+    for (i = 1; i < argc; ++i) 
+    {
         /* TODO: Open the file for reading */
-
         /* TODO: If the file doesn't exist, print an error message and move on
          * to the next file. */
 
+        FILE *file = fopen(argv[1], "r");
+        if(!(file = fopen(argv[1], "r")))
+        {
+            perror("fopen"); //perror prints the actual error 
+            return EXIT_FAILURE; //we don't return 0 if it failed
+        }
+
         /* TODO: Analyze the file */
-        /* analyze_file(file, states, NUM_STATES); */
+         analyze_file(file, states, NUM_STATES); 
     }
 
     /* Now that we have recorded data for each file, we'll summarize them: */
     print_report(states, NUM_STATES);
-
     return 0;
 }
 
-/* TODO function documentation */
-void analyze_file(FILE *file, struct climate_info **states, int num_states) {
-    const int line_sz = 100;
-    char line[line_sz];
-    while (fgets(line, line_sz, file) != NULL) {
+//create a new method that reads the dates (in our case its the state code) of each line
+//and stores it inside the struct
 
-        /* TODO: We need to do a few things here:
-         *
-         *       * Tokenize the line.
-         *       * Determine what state the line is for. This will be the state
-         *         code, stored as our first token.
-         *       * If our states array doesn't have a climate_info entry for
-         *         this state, then we need to allocate memory for it and put it
-         *         in the next open place in the array. Otherwise, we reuse the
-         *         existing entry.
-         *       * Update the climate_info structure as necessary.
-         */
+//Function: method to read the state code of each line, and store it inside a struct
 
+struct climate_info *get_state(char* line)
+{ 
+    char* token = strtok(line, "\t");
+    char* tokens[9];
+
+    int tokenIndex = 0;
+
+    while (token != NULL && tokenIndex < 9)
+    {
+        tokens[tokenIndex++] = token;
+        token = strtok(NULL, "\t");
     }
+
+    return create_state(tokens, tokenIndex);
+
+}
+
+struct climate_info *create_state(char* tokens[], int tokenIndex)
+
+{ 
+    struct climate_info* state = malloc(sizeof(struct climate_info));
+    //update all the information in this to match what is given in the information table above
+    strncpy(state->code, tokens[0], 2);
+    state->humidity = atof(tokens[3]);
+    state->snow = atof(tokens[4]);
+    state->cloud_cover = atof(tokens[5]);
+    state->lightning_strikes = atof(tokens[6]);
+    state->pressure = atof(tokens[7]);
+    state->surface_temperature = atof(tokens[8]);
+
+    return state;
+}
+
+void add_State(struct climate_info *states[], struct climate_info *state, int index)
+{
+        if (states[index] == NULL) //if the 'code' attribute of the first element in the array is null
+        //then in this loop we set the attributes in the states array to that of the values stored in the state array
+        {
+            states[index] = state;
+            // states[index]->code = state->code;
+            // states[index]->humidity = state->humidity;
+            // states[index]->snow = state->snow;
+            // states[index]->cloud_cover = state->cloud_cover;
+            // states[index]->lightning_strikes = state->lightning_strikes;
+            // states[index]->pressure = state->pressure;
+            // states[index]->surface_temperature = state->surface_temperature;
+
+        }
+
+}
+
+void add_Info(struct climate_info *states[], struct climate_info *state, int index)
+{
+    //to go from kelvin to celsius we have to - 273.15
+    states[index]->humidity += state->humidity;
+    states[index]->snow += state->snow;
+    states[index]->cloud_cover += state->cloud_cover;
+    states[index]->pressure += state->pressure;
+    states[index]->surface_temperature += state->surface_temperature;
+
+
+    //LIGHTNING STRIKES
+    states[index]->lightning_strikes += state->lightning_strikes;
+
+    //SNOW COVER
+    states[index]->snow += state->snow;  
+
+    //AVERAGE HUMIDITY
+    states[index]->av_humidity = ((states[index]-> humidity)/states[index]->num_records);
+
+    //AVERAGE TEMP
+    states[index]->av_temp = (((states[index]-> surface_temperature) * 9/5 - 459.67)/states[index]->num_records);
+    
+    //MAX TEMP
+    if (state->surface_temperature > states[index]->max_temp)
+    {
+        states[index]->max_temp = state->surface_temperature;
+    }
+
+    //MIN TEMP
+    if (state->surface_temperature < states[index]->min_temp)
+    {
+        states[index]->min_temp = state->surface_temperature;
+    }
+
+    //AVERAGE CLOUD COVER
+    states[index]->av_cloudCover = ((states[index]->cloud_cover)/states[index]->num_records);
+
+
 }
 
 /* TODO function documentation */
-void print_report(struct climate_info *states[], int num_states) {
+//if theres a new state, you have to dynamically allocate memory
+//if its an old state, you update the information
+void analyze_file(FILE *file, struct climate_info **states, int num_states) 
+{
+    const int line_sz = 100;
+    char line[line_sz];
+    char *token;
+    int index = 0;
+
+    while (fgets(line, line_sz, file) != NULL)
+    {
+        
+        struct climate_info *state = get_state(line);
+
+        if (state == NULL)
+            continue;
+
+        char *code = state->code;
+
+        for(int i = 0; i < num_states;i++)
+        {
+            //compare code(state exists)
+            if (strcmp(states[i]->code, code) == 0)
+            {
+                add_Info(states, state, i);
+               
+            }
+
+            else
+            //only use it when you have to
+            //there is something wrong here
+            {
+                add_State(states, state,i);
+                ++index;
+            }
+        
+        }
+        
+    }
+
+}
+
+/* TODO function documentation */
+void print_report(struct climate_info *states[], int num_states)
+{
     printf("States found: ");
     int i;
-    for (i = 0; i < num_states; ++i) {
-        if (states[i] != NULL) {
+    for (i = 0; i < num_states; ++i) 
+    {
+        if (states[i] != NULL) 
+        {
             struct climate_info *info = states[i];
             printf("%s ", info->code);
         }
     }
     printf("\n");
 
+    for (i = 0; i < num_states; ++i) 
+    {
+        if (states[i] != NULL) 
+        {
+            struct climate_info *info = states[i];
+            printf("State: %s\n", states[i]->code); //replace the "%s" part with each specific attribute (shown in the example)
+            printf("Number of Records: %lu\n",states[i]->num_records);
+            printf("Average Humidity: %ld\n", states[i]->av_humidity);
+            printf("Max Temperature: %Lf\n", states[i]->max_temp);
+            printf("Min Temperature: %Lf\n", states[i]->min_temp );
+            printf("Lightning Strikes: %d\n", states[i]->lightning_strikes);
+            printf("Records with Snow Cover: %d\n", states[i]->snow);
+            printf("Average Cloud Cover: %Lf\n", states[i]->av_cloudCover);
+        }
+    }
     /* TODO: Print out the summary for each state. See format above. */
 }
