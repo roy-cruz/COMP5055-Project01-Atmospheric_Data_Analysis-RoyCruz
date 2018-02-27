@@ -81,7 +81,7 @@ struct climate_info
     long double pressure;
     long double surface_temperature; 
     long double av_temp;
-    long av_humidity;
+    long double av_humidity;
     long double max_temp;
     long double min_temp;
     int lightning_strikes;
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
         }
 
         /* TODO: Analyze the file */
-        printf("%s\n", "****1");
+
          analyze_file(file, states, NUM_STATES); 
     }
 
@@ -164,25 +164,18 @@ struct climate_info *create_state(char* tokens[], int tokenIndex)
     state->cloud_cover = atof(tokens[5]);
     state->lightning_strikes = atof(tokens[6]);
     state->pressure = atof(tokens[7]);
-    state->surface_temperature = atof(tokens[8]);
+    state->surface_temperature = ((atof(tokens[8]))*9/5 - 459.67);
 
     return state;
 }
 
 void add_State(struct climate_info *states[], struct climate_info *state, int index)
 {
-        states[index]->num_records = 1;
-        if (states[index] == NULL) //if the 'code' attribute of the first element in the array is null
-        //then in this loop we set the attributes in the states array to that of the values stored in the state array
+        
+        if (states[index] == NULL)
         {
             states[index] = state;
-            // states[index]->code = state->code;
-            // states[index]->humidity = state->humidity;
-            // states[index]->snow = state->snow;
-            // states[index]->cloud_cover = state->cloud_cover;
-            // states[index]->lightning_strikes = state->lightning_strikes;
-            // states[index]->pressure = state->pressure;
-            // states[index]->surface_temperature = state->surface_temperature;
+            states[index]->num_records = 1;
 
         }
 
@@ -190,8 +183,11 @@ void add_State(struct climate_info *states[], struct climate_info *state, int in
 
 void add_Info(struct climate_info *states[], struct climate_info *state, int index)
 {
+    long double max_temp = state->surface_temperature;
+    long double min_temp = state->surface_temperature;
+
     states[index]->num_records++;
-    //to go from kelvin to celsius we have to *9/5 and - 273.15
+    //to go from kelvin to fahrenheit we have to *9/5 and - 459.67
     states[index]->humidity += state->humidity;
     states[index]->cloud_cover += state->cloud_cover; 
     states[index]->pressure += state->pressure;
@@ -207,16 +203,16 @@ void add_Info(struct climate_info *states[], struct climate_info *state, int ind
     states[index]->av_humidity = ((states[index]-> humidity)/states[index]->num_records);
 
     //AVERAGE TEMP
-    states[index]->av_temp = (((states[index]-> surface_temperature) * 9/5 - 459.67)/states[index]->num_records);
+    states[index]->av_temp = ((states[index]-> surface_temperature)/states[index]->num_records);
     
     //MAX TEMP
-    if (state->surface_temperature > states[index]->max_temp)
+    if (max_temp > states[index]->max_temp)
     {
         states[index]->max_temp = state->surface_temperature;
     }
 
     //MIN TEMP
-    if (state->surface_temperature < states[index]->min_temp)
+    if (min_temp < states[index]->min_temp)
     {
         states[index]->min_temp = state->surface_temperature;
     }
@@ -231,7 +227,7 @@ void add_Info(struct climate_info *states[], struct climate_info *state, int ind
 //if its an old state, you update the information
 void analyze_file(FILE *file, struct climate_info **states, int num_states) 
 {
-    printf("%s\n", "****2");
+
     const int line_sz = 100;
     char line[line_sz];
     char *token;
@@ -240,41 +236,37 @@ void analyze_file(FILE *file, struct climate_info **states, int num_states)
 
 
     while (fgets(line, line_sz, file) != NULL)
+    
     {
-        printf("%s\n", "****3");
         struct climate_info *state = get_state(line);
 
         if (state == NULL)
             continue;
-        printf("%s\n", "****4");
+
         char *code = state->code;
 
-    for(int i = 0; i < num_states;i++)                  
+        for(int i = 0; i < num_states;i++)                  
+        {                                                   
 
-    {                                                   
+            if (states[i] == NULL) 
+            {                                         
+                add_State(states, state,i);                 
+                break;                                      
+            } 
 
-        if (states[i] == NULL) 
+            else 
+            {                                        
+                int val = strcmp(states[i]->code, code);    
+                if (val == 0)                               
+                {                                           
+                    add_Info(states, state, i);             
+                    break;                                  
 
-        {                                         
-            add_State(states, state,i);                 
-            break;                                      
-        } 
+                }                                           
 
-        else 
-        {                                        
+            }                                               
 
-            int val = strcmp(states[i]->code, code);    
-
-            if (val == 0)                               
-            {                                           
-                add_Info(states, state, i);             
-                break;                                  
-
-            }                                           
-
-        }                                               
-
-    }         
+        }         
         
     }
 
@@ -302,12 +294,13 @@ void print_report(struct climate_info *states[], int num_states)
             struct climate_info *info = states[i];
             printf("State: %s\n", states[i]->code); //replace the "%s" part with each specific attribute (shown in the example)
             printf("Number of Records: %lu\n",states[i]->num_records);
-            printf("Average Humidity: %ld\n", states[i]->av_humidity);
-            printf("Max Temperature: %Lf\n", states[i]->max_temp);
-            printf("Min Temperature: %Lf\n", states[i]->min_temp );
+            printf("Average Humidity: %0.1Lf%s\n", states[i]->av_humidity, "%");
+            printf("Average Temperature: %0.1Lf%s\n", states[i]->av_temp,"F");
+            printf("Max Temperature: %0.1Lf%s\n", states[i]->max_temp,"F");
+            printf("Min Temperature: %0.1Lf%s\n", states[i]->min_temp, "F");
             printf("Lightning Strikes: %d\n", states[i]->lightning_strikes);
             printf("Records with Snow Cover: %d\n", states[i]->snow);
-            printf("Average Cloud Cover: %Lf\n", states[i]->av_cloudCover);
+            printf("Average Cloud Cover: %0.1Lf%s\n", states[i]->av_cloudCover, "%");
         }
     }
     /* TODO: Print out the summary for each state. See format above. */
