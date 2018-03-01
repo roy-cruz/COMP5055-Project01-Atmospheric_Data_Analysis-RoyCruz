@@ -15,7 +15,16 @@
  *
  * Opening file: data_tn.tdv
  * Opening file: data_wa.tdv
- * States found: TN WA
+ * States found: WA TN
+  * -- State: WA --
+ * Number of Records: 48357
+ * Average Humidity: 61.3%
+ * Average Temperature: 52.9F
+ * Max Temperature: 125.7F on Sun Jun 28 17:00:00 2015
+ * Min Temperature: -18.7F on Wed Dec 30 04:00:00 2015
+ * Lightning Strikes: 1190
+ * Records with Snow Cover: 1383
+ * Average Cloud Cover: 54.5%
  * -- State: TN --
  * Number of Records: 17097
  * Average Humidity: 49.4%
@@ -25,15 +34,7 @@
  * Lightning Strikes: 781
  * Records with Snow Cover: 107
  * Average Cloud Cover: 53.0%
- * -- State: WA --
- * Number of Records: 48357
- * Average Humidity: 61.3%
- * Average Temperature: 52.9F
- * Max Temperature: 125.7F on Sun Jun 28 17:00:00 2015
- * Min Temperature: -18.7F on Wed Dec 30 04:00:00 2015
- * Lightning Strikes: 1190
- * Records with Snow Cover: 1383
- * Average Cloud Cover: 54.5%
+
  *
  * TDV format:
  *
@@ -68,9 +69,7 @@
 
 #define NUM_STATES 50
 
-
 /* TODO: Add elements to the climate_info struct as necessary. */
-//what is a struct
 struct climate_info 
 {
     char code[3]; 
@@ -86,6 +85,10 @@ struct climate_info
     long double min_temp;
     int lightning_strikes;
     long double av_cloudCover;
+    int timeStamp;
+    long int max_timeStamp;
+    long int min_timeStamp;
+    
 };
 
 struct climate_info *create_state(char* tokens[], int tokenIndex);
@@ -132,9 +135,9 @@ int main(int argc, char *argv[])
 //create a new method that reads the dates (in our case its the state code) of each line
 //and stores it inside the struct
 
-/*The function of this method is to read each line in the file and add that information into a sturct 
-this will make it easy in terms of the variables being used in the sense of the  values not being used in more that one place 
-this makes the projected ouput for the file a part that can easily be  */
+/* This function tokenizes each line in the tdv file, and updates a 'tokenIndex variable', and updates it. We do 
+this because the "create_state" function's parameters takes in the tokens array, as well as the tokenIndex, to 
+update the values into the new state array */
 
 struct climate_info *get_state(char* line)
 { 
@@ -153,12 +156,15 @@ struct climate_info *get_state(char* line)
 
 }
 
+/* This function allocates space in heap for a new array, called state. This is an array of structs that stores information for EACH 
+state, using the tokens created in the "get_state" function */
 struct climate_info *create_state(char* tokens[], int tokenIndex)
 
 { 
     struct climate_info* state = malloc(sizeof(struct climate_info));
     //update all the information in this to match what is given in the information table above
     strncpy(state->code, tokens[0], 2);
+    state->timeStamp = (atoi(tokens[1]))/1000;
     state->humidity = atof(tokens[3]);
     state->snow = atof(tokens[4]);
     state->cloud_cover = atof(tokens[5]);
@@ -168,6 +174,8 @@ struct climate_info *create_state(char* tokens[], int tokenIndex)
 
     return state;
 }
+
+/* adds each state array to the states array if it isn't there  */
 
 void add_State(struct climate_info *states[], struct climate_info *state, int index)
 {
@@ -180,6 +188,8 @@ void add_State(struct climate_info *states[], struct climate_info *state, int in
         }
 
 }
+
+/* If the state is already in the states array, the we just update the information of each state. Most calculations are in this function*/
 
 void add_Info(struct climate_info *states[], struct climate_info *state, int index)
 {
@@ -209,12 +219,14 @@ void add_Info(struct climate_info *states[], struct climate_info *state, int ind
     if (max_temp > states[index]->max_temp)
     {
         states[index]->max_temp = state->surface_temperature;
+        states[index]->max_timeStamp = state->timeStamp;
     }
 
     //MIN TEMP
     if (min_temp < states[index]->min_temp)
     {
         states[index]->min_temp = state->surface_temperature;
+        states[index]->min_timeStamp = state->timeStamp;
     }
 
     //AVERAGE CLOUD COVER
@@ -272,7 +284,7 @@ void analyze_file(FILE *file, struct climate_info **states, int num_states)
 
 }
 
-/* TODO function documentation */
+/* printing out all the information*/
 void print_report(struct climate_info *states[], int num_states)
 {
     printf("States found: ");
@@ -292,16 +304,18 @@ void print_report(struct climate_info *states[], int num_states)
         if (states[i] != NULL) 
         {
             struct climate_info *info = states[i];
-            printf("State: %s\n", states[i]->code); //replace the "%s" part with each specific attribute (shown in the example)
+            printf("State: %s\n", states[i]->code); 
             printf("Number of Records: %lu\n",states[i]->num_records);
             printf("Average Humidity: %0.1Lf%s\n", states[i]->av_humidity, "%");
             printf("Average Temperature: %0.1Lf%s\n", states[i]->av_temp,"F");
-            printf("Max Temperature: %0.1Lf%s\n", states[i]->max_temp,"F");
-            printf("Min Temperature: %0.1Lf%s\n", states[i]->min_temp, "F");
+            printf("Max Temperature: %0.1Lf%s", states[i]->max_temp,"F on ");
+            printf("%s", ctime(&states[i]->max_timeStamp));
+            printf("Min Temperature: %0.1Lf%s", states[i]->min_temp, "F on ");
+            printf("%s", ctime(&states[i]->min_timeStamp));
             printf("Lightning Strikes: %d\n", states[i]->lightning_strikes);
             printf("Records with Snow Cover: %d\n", states[i]->snow);
             printf("Average Cloud Cover: %0.1Lf%s\n", states[i]->av_cloudCover, "%");
+            printf("%s\n", "---------------------------");
         }
     }
-    /* TODO: Print out the summary for each state. See format above. */
 }
