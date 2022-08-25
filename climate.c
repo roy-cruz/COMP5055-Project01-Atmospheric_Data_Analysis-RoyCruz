@@ -70,35 +70,38 @@
 #define NUM_STATES 50
 
 /* TODO: Add elements to the climate_info struct as necessary. */
+// Definition of struct climate_info
 struct climate_info 
 {
     char code[3]; 
-    unsigned long num_records;
-    long double humidity;
-    int snow;
-    long double cloud_cover;
-    long double pressure;
-    long double surface_temperature; 
-    long double av_temp;
-    long double av_humidity;
-    long double max_temp;
-    long double min_temp;
-    int lightning_strikes;
-    long double av_cloudCover;
-    int timeStamp;
-    long int max_timeStamp;
-    long int min_timeStamp;
+    unsigned long num_records;          // Number of records
+    long double humidity;               // Humidity
+    int snow;                           // Snow
+    long double cloud_cover;            // Cloud cover
+    long double pressure;               // Pressure
+    long double surface_temperature;    // Surface temperature
+    long double av_temp;                // Average temperature
+    long double av_humidity;            // Average humidity
+    long double max_temp;               // Maximum temperature
+    long double min_temp;               // Minimum temperature
+    int lightning_strikes;              // Lightning strikes
+    long double av_cloudCover;          // Average cloud cover
+    int timeStamp;                      // Time stamp
+    long int max_timeStamp;             // Maximum time stamp
+    long int min_timeStamp;             // Minimum time stamp
     
 };
 
-struct climate_info *create_state(char* tokens[], int tokenIndex);
-void analyze_file(FILE *file, struct climate_info *states[], int num_states);
-void print_report(struct climate_info *states[], int num_states);
+
+// Prototypes
+struct climate_info *create_state(char* tokens[], int tokenIndex);              // Create new struct function prototype
+void analyze_file(FILE *file, struct climate_info *states[], int num_states);   // Analyze file function prototype
+void print_report(struct climate_info *states[], int num_states);               // Print report function
 
 int main(int argc, char *argv[]) 
 {
     /* TODO: fix this conditional. You should be able to read multiple files. */
-    if (argc < 2) 
+    if (argc < 2) // argc will be < 2 if no files are passed
     {
         printf("Usage: %s tdv_file1 tdv_file2 ... tdv_fileN \n", argv[0]);
         return EXIT_FAILURE;
@@ -106,7 +109,7 @@ int main(int argc, char *argv[])
 
     /* Let's create an array to store our state data in. As we know, there are
      * 50 US states. */
-    struct climate_info *states[NUM_STATES] = {NULL};
+    struct climate_info *states[NUM_STATES] = {NULL};   // Create 
 
     int i;
     for (i = 1; i < argc; ++i) 
